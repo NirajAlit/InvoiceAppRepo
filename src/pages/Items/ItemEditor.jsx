@@ -378,7 +378,7 @@ const ItemEditor = ({ open, close, onSaved, itemId, mode }) => {
 
                     <Grid container spacing={1}>
 
-                        <Grid item xs={12} md={6}>
+                        <Grid item xs={6} >
                             <TextField
                                 required
                                 name="salesRate"
@@ -430,7 +430,7 @@ const ItemEditor = ({ open, close, onSaved, itemId, mode }) => {
 
                         </Grid>
 
-                        <Grid item xs={12} md={6}>
+                        <Grid item xs={6}>
                             <TextField
                                 name="discountPct"
                                 label="Discount %"

@@ -11,7 +11,7 @@ export default function App() {
   const hasToken = localStorage.getItem("token")
   if (hasToken) {
     return (
-      
+
       <Layout>
         <Routes>
           <Route path="/Home" element={<Home />} />
@@ -25,6 +25,7 @@ export default function App() {
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<SignupForm />} />
+        <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     );
   }
