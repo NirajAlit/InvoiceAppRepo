@@ -30,6 +30,8 @@ export default function ItemList() {
   }
 
   const closeEditor = () => (
+    setSelectedItemID(null),
+    setEditorMode("add"),
     setShowItemEditor(!ShowItemEditor)
   )
 
@@ -81,7 +83,7 @@ export default function ItemList() {
 
     setRows(finalRows);
   };
-  
+
 
   const DeleteData = async () => {
 
@@ -166,8 +168,8 @@ export default function ItemList() {
     {
       field: "salesRate",
       headerName: "Sale Rate",
-      width: 130,
-      maxWidth: 120, // column shrink nahi hoga
+      width: 150,
+      maxWidth: 140, // column shrink nahi hoga
       flex: 0,
       renderCell: (params) => `$${params.value?.toFixed(2)}`,
     },
@@ -244,7 +246,7 @@ export default function ItemList() {
     <>
       <Box sx={{ p: 1, maxWidth: "100%", }}>
         {/* HEADER */}
-        <Box sx={{ display: "flex", justifyContent:"space-between" }}>
+        <Box sx={{ display: "flex", justifyContent: "space-between" }}>
           <Grid container spacing={1}>
             <Typography variant="h4" fontWeight="bold">
               Items
