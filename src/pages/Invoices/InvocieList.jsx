@@ -21,7 +21,11 @@ import {
     MenuItem,
     FormControl,
     Chip,
-    Stack
+    Stack,
+    Dialog,
+    DialogTitle,
+    DialogContent,
+    DialogActions
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import AddIcon from '@mui/icons-material/Add';
@@ -40,11 +44,70 @@ import { GetMetrics, GetTopItems, GetTrend } from '../../api/invoice.service';
 import dayjs from 'dayjs';
 
 const InvoiceList = () => {
-    const [dateFilter, setDateFilter] = useState('today');
+    const [dateFilter, setDateFilter] = useState('month');
+    const [customDateRange, setCustomDateRange] = useState({ from: dayjs(), to: dayjs() });
+    const [openCustomDateDialog, setOpenCustomDateDialog] = useState(false);
+    const [tempCustomDateRange, setTempCustomDateRange] = useState({ from: dayjs().format('YYYY-MM-DD'), to: dayjs().format('YYYY-MM-DD') });
+    const [dateError, setDateError] = useState('');
+
     const handleDateFilterChange = (event, newAlignment) => {
         if (newAlignment !== null) {
-            setDateFilter(newAlignment);
+            if (newAlignment === 'custom') {
+                setOpenCustomDateDialog(true);
+            } else {
+                setDateFilter(newAlignment);
+            }
         }
+    };
+
+    const handleCustomDateSubmit = () => {
+        const from = dayjs(tempCustomDateRange.from);
+        const to = dayjs(tempCustomDateRange.to);
+
+        if (to.isBefore(from)) {
+            setDateError('To Date cannot be before From Date');
+            return;
+        }
+
+        setCustomDateRange({ from, to });
+        setDateFilter('custom');
+        setOpenCustomDateDialog(false);
+        setDateError('');
+    };
+
+    const getDateRange = () => {
+        const today = dayjs();
+        let fromDate, toDate;
+
+        switch (dateFilter) {
+            case 'today':
+                fromDate = today.startOf('day');
+                toDate = today.endOf('day');
+                break;
+            case 'week':
+                fromDate = today.startOf('week');
+                toDate = today.endOf('week');
+                break;
+            case 'month':
+                fromDate = today.startOf('month');
+                toDate = today.endOf('month');
+                break;
+            case 'year':
+                fromDate = today.startOf('year');
+                toDate = today.endOf('year');
+                break;
+            case 'custom':
+                fromDate = customDateRange.from || today.startOf('day');
+                toDate = customDateRange.to || today.endOf('day');
+                break;
+            default:
+                fromDate = today.startOf('day');
+                toDate = today.endOf('day');
+        }
+        return {
+            fromDate: fromDate.format('YYYY-MM-DD'),
+            toDate: toDate.format('YYYY-MM-DD')
+        };
     };
 
 
@@ -71,16 +134,22 @@ const InvoiceList = () => {
     }
 
     useEffect(() => {
-        GetMetricsData();
         GetTrendData();
         GetTopItemsData();
-        GetInvoiceData();
-
     }, []);
 
-    const GetInvoiceData = async () => {
+    useEffect(() => {
+        const { fromDate, toDate } = getDateRange();
+        GetMetricsData(fromDate, toDate);
+        GetInvoiceData(fromDate, toDate);
+
+    }, [dateFilter]); // Re-run when dateFilter changes
+
+    const GetInvoiceData = async (fromDate, toDate) => {
         try {
-            const res = await api.get("/Invoice/GetList");
+            // Assuming API supports fromDate and toDate query params
+            // If not, you might need to adjust this based on your API
+            const res = await api.get(`/Invoice/GetList?fromDate=${fromDate}&toDate=${toDate}`);
             setRows(res.data);
         } catch (error) {
             console.error("Failed to fetch invoices:", error);
@@ -101,14 +170,9 @@ const InvoiceList = () => {
     }
     const [Metrics, setMetrics] = useState([]);
 
-    const GetMetricsData = async () => {
-        debugger
+    const GetMetricsData = async (fromDate, toDate) => {
         try {
-            const fromDate = dayjs().format('YYYY-MM-DD');
-            const toDate = dayjs().format('YYYY-MM-DD');
-
             const res = await GetMetrics(fromDate, toDate)
-            debugger
             setMetrics(res.data);
         } catch (error) {
             console.error("Failed to fetch metrics:", error);
@@ -167,7 +231,7 @@ const InvoiceList = () => {
             {/* Stats Cards */}
             <Grid container spacing={3} sx={{ mb: 4 }}>
                 {/* Count Card */}
-                <Grid sx={{ width: '15%' }} item xs={12} sm={6} md={3}>
+                <Grid sx={{ width: '13%' }} item xs={12} sm={6} md={3}>
                     <Paper elevation={0} sx={{ p: 3, borderRadius: 3, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
                         <Typography variant="h4" fontWeight="500" sx={{ color: '#1a1a1a', mb: 1 }}>
                             {Metrics[0]?.invoiceCount}
@@ -230,7 +294,7 @@ const InvoiceList = () => {
                                     },
                                 ]}
                                 height={100}
-                                width={680}
+                                width={650}
                                 margin={{ top: 10, bottom: 10, left: 10, right: 10 }}
                                 sx={{
                                     '.MuiLineElement-root': {
@@ -364,21 +428,27 @@ const InvoiceList = () => {
                     rows={rows}
                     getRowId={(row) => row.invoiceID}
                     columns={[
-                        { field: 'invoiceNo', headerName: 'Invoice No', flex: 1, minWidth: 150, headerClassName: 'super-app-theme--header' },
+                        { field: 'invoiceNo', headerName: 'Invoice No', flex: 1, minWidth: 150, headerClassName: 'super-app-theme--header', alignHeader: 'left', headerAlign: 'left', align: 'left' },
                         {
                             field: 'invoiceDate',
                             headerName: 'Date',
                             flex: 1,
                             minWidth: 120,
                             headerClassName: 'super-app-theme--header',
-                            valueFormatter: (params) => dayjs(params).format('DD-MMM-YYYY')
+                            valueFormatter: (params) => dayjs(params).format('DD-MMM-YYYY'),
+                            alignHeader: 'left',
+                            headerAlign: 'left',
+                            align: 'left'
                         },
-                        { field: 'customerName', headerName: 'Customer', flex: 1.5, minWidth: 180, headerClassName: 'super-app-theme--header' },
-                        { field: 'totalItems', headerName: 'Items', type: 'number', flex: 0.5, minWidth: 80, headerClassName: 'super-app-theme--header' },
+                        { field: 'customerName', headerName: 'Customer', flex: 1.5, minWidth: 180, headerClassName: 'super-app-theme--header', alignHeader: 'left', headerAlign: 'left', align: 'left' },
+                        { field: 'totalItems', headerName: 'Items', type: 'number', flex: 0.5, minWidth: 80, headerClassName: 'super-app-theme--header', alignHeader: 'left', headerAlign: 'left', align: 'left' },
                         {
                             field: 'subTotal', headerName: 'Sub Total', type: 'number', flex: 1, minWidth: 120,
                             valueFormatter: (params) => `$${params?.toFixed(2)}`,
-                            headerClassName: 'super-app-theme--header'
+                            headerClassName: 'super-app-theme--header',
+                            alignHeader: 'left',
+                            headerAlign: 'left',
+                            align: 'left',
                         },
                         {
                             field: 'taxPercentage',
@@ -387,7 +457,10 @@ const InvoiceList = () => {
                             flex: 0.5,
                             minWidth: 80,
                             valueFormatter: (params) => params?.toFixed(2),
-                            headerClassName: 'super-app-theme--header'
+                            headerClassName: 'super-app-theme--header',
+                            alignHeader: 'left',
+                            headerAlign: 'left',
+                            align: 'left',
                         },
                         {
                             field: 'taxAmount',
@@ -396,7 +469,10 @@ const InvoiceList = () => {
                             flex: 1,
                             minWidth: 120,
                             valueFormatter: (params) => `$${params?.toFixed(2)}`,
-                            headerClassName: 'super-app-theme--header'
+                            headerClassName: 'super-app-theme--header',
+                            alignHeader: 'left',
+                            headerAlign: 'left',
+                            align: 'left',
                         },
                         {
                             field: 'invoiceAmount',
@@ -406,6 +482,9 @@ const InvoiceList = () => {
                             minWidth: 120,
                             valueFormatter: (params) => `$${params?.toFixed(2)}`,
                             headerClassName: 'super-app-theme--header',
+                            alignHeader: 'left',
+                            headerAlign: 'left',
+                            align: 'left'
 
                         },
                         // {
@@ -485,6 +564,40 @@ const InvoiceList = () => {
                     }}
                 />
             </Paper>
+
+            {/* Custom Date Range Dialog */}
+            <Dialog open={openCustomDateDialog} onClose={() => setOpenCustomDateDialog(false)}>
+                <DialogTitle>Select Date Range</DialogTitle>
+                <DialogContent>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1, minWidth: 300 }}>
+                        <TextField
+                            label="From Date"
+                            type="date"
+                            value={tempCustomDateRange.from}
+                            onChange={(e) => setTempCustomDateRange({ ...tempCustomDateRange, from: e.target.value })}
+                            slotProps={{ shrink: true }}
+                            fullWidth
+                        />
+                        <TextField
+                            label="To Date"
+                            type="date"
+                            value={tempCustomDateRange.to}
+                            onChange={(e) => setTempCustomDateRange({ ...tempCustomDateRange, to: e.target.value })}
+                            slotProps={{ shrink: true }}
+                            fullWidth
+                        />
+                        {dateError && (
+                            <Typography color="error" variant="caption">
+                                {dateError}
+                            </Typography>
+                        )}
+                    </Box>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setOpenCustomDateDialog(false)}>Cancel</Button>
+                    <Button onClick={handleCustomDateSubmit} variant="contained">Apply</Button>
+                </DialogActions>
+            </Dialog>
         </Box>
     );
 
