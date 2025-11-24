@@ -19,3 +19,6 @@ export const CheckDuplicateItemName = (ItemName, excludeID) => {
     return api.get(`/Item/CheckDuplicateItemName?ItemName=${ItemName}&excludeID=${excludeID}`);
 };
 
+export const GetLookupList = () => {
+    return api.get(`/Item/GetLookupList`);
+};

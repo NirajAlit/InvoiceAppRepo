@@ -42,6 +42,7 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import api from '../../utils/axiosintance';
 import { GetMetrics, GetTopItems, GetTrend } from '../../api/invoice.service';
 import dayjs from 'dayjs';
+import InvocieEditor from './InvocieEditor';
 
 const InvoiceList = () => {
     const [dateFilter, setDateFilter] = useState('month');
@@ -179,6 +180,18 @@ const InvoiceList = () => {
         }
     }
 
+
+    //// Show Editor
+    const [ShowInvoiceEditor, setShowInvoiceEditor] = useState(false)
+    const showEditor = () => {
+        setShowInvoiceEditor(!ShowInvoiceEditor)
+    }
+
+    const closeEditor = () => (
+        setSelectedItemID(null),
+        //setEditorMode("add"),
+        setShowInvoiceEditor(!ShowInvoiceEditor)
+    )
     return (
         <Box sx={{ p: 3, bgcolor: '#f8f9fa', }}>
             {/* Header */}
@@ -386,6 +399,7 @@ const InvoiceList = () => {
                             px: 2,
                             '&:hover': { bgcolor: '#333' }
                         }}
+                        onClick={showEditor}
                     >
                         New Invoice
                     </Button>
@@ -598,6 +612,14 @@ const InvoiceList = () => {
                     <Button onClick={handleCustomDateSubmit} variant="contained">Apply</Button>
                 </DialogActions>
             </Dialog>
+            {ShowInvoiceEditor && (
+                <InvocieEditor
+                    open={ShowInvoiceEditor}
+                    close={closeEditor}
+                >
+
+                </InvocieEditor>
+            )}
         </Box>
     );
 
