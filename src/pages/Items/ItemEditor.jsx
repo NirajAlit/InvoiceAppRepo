@@ -385,7 +385,7 @@ const ItemEditor = ({ open, close, onSaved, itemId, mode }) => {
                                 label="Item Name"
                                 required
                                 name="itemName"
-                                placeholder="e.g. Wireless Headphones"
+                                placeholder="Enter Item Name"
                                 fullWidth
                                 value={form.itemName}
                                 onChange={(e) => {

@@ -42,7 +42,9 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import api from '../../utils/axiosintance';
 import { GetMetrics, GetTopItems, GetTrend } from '../../api/invoice.service';
 import dayjs from 'dayjs';
-import InvocieEditor from './InvocieEditor';
+import InvocieEditor from './InvoiceEditor';
+import ConfirmDialog from '../../components/ConfirmDialog';
+import InvoiceEditor from './InvoiceEditor';
 
 const InvoiceList = () => {
     const [dateFilter, setDateFilter] = useState('month');
@@ -114,9 +116,8 @@ const InvoiceList = () => {
 
     const [topItems, setTopItems] = useState([]);
     const [rows, setRows] = useState([]);
-    const [selectedItemID, setSelectedItemID] = useState(null);
+    const [invoiceID, setInvoiceID] = useState(null);
     const [editorMode, setEditorMode] = useState("add");
-    const [showItemEditor, setShowItemEditor] = useState(false);
     const [openDialog, setOpenDialog] = useState(false);
 
     const GetTopItemsData = async () => {
@@ -188,18 +189,71 @@ const InvoiceList = () => {
     }
 
     const closeEditor = () => (
-        setSelectedItemID(null),
+        setInvoiceID(null),
         //setEditorMode("add"),
         setShowInvoiceEditor(!ShowInvoiceEditor)
     )
+    const handleInvoiceSaved = () => {
+        const { fromDate, toDate } = getDateRange();
+        GetInvoiceData(fromDate, toDate);   // Refresh grid with date range
+        setShowInvoiceEditor(false); // Close popup
+    }
+
+    const DeleteData = async () => {
+        debugger
+        if (openDialog) {
+            try {
+                await api.delete(`/Invoice/${invoiceID}`);
+                // Refresh list
+                setOpenDialog(false)
+                const { fromDate, toDate } = getDateRange();
+                GetInvoiceData(fromDate, toDate);
+            } catch (error) {
+                console.error("Delete failed:", error);
+                const msg = error.response.data;
+                if (msg) {
+                    setApiError(msg)
+                }
+
+            }
+        }
+
+    };
+
     return (
-        <Box sx={{ p: 3, bgcolor: '#f8f9fa', }}>
+        <Box sx={{ p: 1, }}>
             {/* Header */}
             {/* Header */}
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4, flexWrap: 'wrap', gap: 2 }}>
-                <Typography variant="h5" fontWeight="700" sx={{ color: '#1a1a1a' }}>
-                    Invoices
-                </Typography>
+            <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+                <Grid container spacing={1}>
+                    <Typography variant="h5" fontWeight="700" sx={{ color: '#1a1a1a' }}>
+                        Invoices
+                    </Typography>
+                </Grid>
+
+                <Grid>
+
+                    <Button
+                        variant="contained"
+                        startIcon={<AddIcon />}
+                        disableElevation
+                        sx={{
+                            textTransform: 'none',
+                            borderRadius: 2,
+                            px: 2,
+                        }}
+                        onClick={showEditor}
+                    >
+                        New Invoice
+                    </Button>
+
+                </Grid>
+
+            </Box>
+
+
+            <Box sx={{ display: 'flex', justifyContent: 'end', alignItems: 'center', mb: 2, mt: 2, flexWrap: 'wrap', gap: 2 }}>
+
                 <ToggleButtonGroup
                     value={dateFilter}
                     exclusive
@@ -242,7 +296,7 @@ const InvoiceList = () => {
             </Box>
 
             {/* Stats Cards */}
-            <Grid container spacing={3} sx={{ mb: 4 }}>
+            <Grid flex container spacing={4} sx={{ mb: 0 }}>
                 {/* Count Card */}
                 <Grid sx={{ width: '13%' }} item xs={12} sm={6} md={3}>
                     <Paper elevation={0} sx={{ p: 3, borderRadius: 3, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
@@ -259,7 +313,7 @@ const InvoiceList = () => {
                 </Grid>
 
                 {/* Amount Card */}
-                <Grid item xs={12} sm={6} md={3}>
+                <Grid item xs={12} sm={6} md={3} >
                     <Paper elevation={0} sx={{ p: 3, borderRadius: 3, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
                         <Typography variant="h4" fontWeight="500" sx={{ color: '#1a1a1a', mb: 1 }}>
                             {Metrics[0]?.totalAmount}
@@ -296,7 +350,7 @@ const InvoiceList = () => {
                                         data: Trend12m.map(item => item.amountSum),
                                         area: true,
                                         color: '#b44d4dff',
-                                        showMark: false,
+                                        showMark: true,
                                         valueFormatter: (value, context) => {
                                             if (context.dataIndex != null) {
                                                 const item = Trend12m[context.dataIndex];
@@ -388,7 +442,7 @@ const InvoiceList = () => {
                     }}
                 /> */}
                 <Box sx={{ display: 'flex', gap: 2 }}>
-                    <Button
+                    {/* <Button
                         variant="contained"
                         startIcon={<AddIcon />}
                         disableElevation
@@ -402,7 +456,7 @@ const InvoiceList = () => {
                         onClick={showEditor}
                     >
                         New Invoice
-                    </Button>
+                    </Button> */}
                     {/* <Button
                         variant="outlined"
                         startIcon={<FileDownloadOutlinedIcon />}
@@ -435,14 +489,24 @@ const InvoiceList = () => {
             </Box>
 
             {/* DataGrid */}
-            <Paper elevation={0} sx={{ borderRadius: 3, mb: 3, bgcolor: '#fff', overflow: 'hidden' }}>
+            <Paper elevation={0} sx={{ height: "800px", maxHeight: '50vh', borderRadius: 3, mb: 2, bgcolor: '#fff', overflow: 'hidden' }}>
                 <DataGrid
+
                     showToolbar
                     // rows={invoices}
                     rows={rows}
                     getRowId={(row) => row.invoiceID}
                     columns={[
-                        { field: 'invoiceNo', headerName: 'Invoice No', flex: 1, minWidth: 150, headerClassName: 'super-app-theme--header', alignHeader: 'left', headerAlign: 'left', align: 'left' },
+                        {
+                            field: 'invoiceNo',
+                            headerName: 'Invoice No',
+                            flex: 1,
+                            minWidth: 150,
+                            headerClassName: 'super-app-theme--header',
+                            alignHeader: 'left',
+                            headerAlign: 'left',
+                            align: 'left'
+                        },
                         {
                             field: 'invoiceDate',
                             headerName: 'Date',
@@ -452,10 +516,11 @@ const InvoiceList = () => {
                             valueFormatter: (params) => dayjs(params).format('DD-MMM-YYYY'),
                             alignHeader: 'left',
                             headerAlign: 'left',
-                            align: 'left'
+                            align: 'left',
+                            hideable: false,
                         },
-                        { field: 'customerName', headerName: 'Customer', flex: 1.5, minWidth: 180, headerClassName: 'super-app-theme--header', alignHeader: 'left', headerAlign: 'left', align: 'left' },
-                        { field: 'totalItems', headerName: 'Items', type: 'number', flex: 0.5, minWidth: 80, headerClassName: 'super-app-theme--header', alignHeader: 'left', headerAlign: 'left', align: 'left' },
+                        { field: 'customerName', headerName: 'Customer', flex: 1.5, minWidth: 180, headerClassName: 'super-app-theme--header', alignHeader: 'left', headerAlign: 'left', align: 'left', hideable: false },
+                        { field: 'totalItems', headerName: 'Items', type: 'number', flex: 0.5, minWidth: 80, headerClassName: 'super-app-theme--header', alignHeader: 'left', headerAlign: 'left', align: 'left', hideable: false },
                         {
                             field: 'subTotal', headerName: 'Sub Total', type: 'number', flex: 1, minWidth: 120,
                             valueFormatter: (params) => `$${params?.toFixed(2)}`,
@@ -527,20 +592,21 @@ const InvoiceList = () => {
                             width: 120,
                             flex: 0,
                             sortable: false,
+                            hideable: false,
                             renderCell: (params) => (
                                 <Stack direction="row" spacing={1}>
                                     <IconButton color="primary">
                                         <EditIcon fontSize="small" onClick={() => {
-                                            setSelectedItemID(params.row.invoiceID)
+                                            setInvoiceID(params.row.invoiceID)
                                             setEditorMode("edit");
-                                            setShowItemEditor(true);
+                                            setShowInvoiceEditor(true);
 
                                         }} />
 
                                     </IconButton>
                                     <IconButton color="error">
                                         <DeleteIcon fontSize="small" onClick={() => {
-                                            setSelectedItemID(params.row.invoiceID)
+                                            setInvoiceID(params.row.invoiceID)
                                             setOpenDialog(true)
                                         }
                                         }
@@ -613,13 +679,25 @@ const InvoiceList = () => {
                 </DialogActions>
             </Dialog>
             {ShowInvoiceEditor && (
-                <InvocieEditor
+                <InvoiceEditor
                     open={ShowInvoiceEditor}
                     close={closeEditor}
+                    onSaved={handleInvoiceSaved}
+                    invoiceId={invoiceID}
+                    mode={editorMode}    // "add" or "edit"
                 >
 
-                </InvocieEditor>
+                </InvoiceEditor>
             )}
+
+            <ConfirmDialog
+                openDialog={openDialog}
+                closeDialog={setOpenDialog}
+                Titile="Invoice"
+                Message="Are you sure you want to delete this item?"
+                onConfirm={DeleteData}
+
+            ></ConfirmDialog>
         </Box>
     );
 

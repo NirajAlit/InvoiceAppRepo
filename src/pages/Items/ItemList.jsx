@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { DataGrid } from "@mui/x-data-grid";
-import { Box, Button, Stack, TextField, Typography, IconButton, Snackbar, Alert, Grid } from "@mui/material";
+import { Box, Button, Stack, TextField, Typography, IconButton, Snackbar, Alert, Grid, Paper } from "@mui/material";
 import api from "../../utils/axiosintance";
 import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
@@ -123,6 +123,7 @@ export default function ItemList() {
       width: 120,
       maxWidth: 120,
       flex: 0,
+      hideable: false,
 
       renderCell: (params) => {
 
@@ -248,11 +249,8 @@ export default function ItemList() {
         {/* HEADER */}
         <Box sx={{ display: "flex", justifyContent: "space-between" }}>
           <Grid container spacing={1}>
-            <Typography variant="h4" fontWeight="bold">
+            <Typography variant="h5" fontWeight="700" sx={{ color: '#1a1a1a' }}>
               Items
-              <Typography color="text.secondary" sx={{ mb: 2 }}>
-                Manage your product and service catalog.
-              </Typography>
 
             </Typography>
           </Grid>
@@ -271,30 +269,16 @@ export default function ItemList() {
 
         </Box>
 
-        <hr />
-        {/* ACTIONS & SEARCH BAR */}
-        {/* <Stack
-          direction="row"
-          justifyContent="end"
-          alignItems="center"
-          sx={{ mb: 2 }}
-        >
 
-          <Stack direction="row" spacing={2}>
-            <Button
-              variant="contained"
-              startIcon={<AddIcon />}
-              sx={{ borderRadius: 2 }}
-              onClick={showEditor}
-            >
-              Add New Item
-            </Button>
-          </Stack>
-        </Stack> */}
+
 
         {/* DATAGRID */}
-        <Box sx={{ height: "800px", maxHeight: '60vh', width: "100%", background: "#ffffffff" }}>
+        {/* <Box sx={{ height: "800px", maxHeight: '60vh', width: "100%", background: "#ffffffff" }}> */}
+
+
+        <Paper elevation={0} sx={{ borderRadius: 3, mb: 2, mt: 2, bgcolor: '#fff', overflow: 'hidden' }}>
           <DataGrid
+            sx={{ maxHeight: '70vh' }}
             rows={rows}
             columns={columns}
             // pageSize={10}
@@ -305,7 +289,9 @@ export default function ItemList() {
             showToolbar={true}
             columnVisibilityModel={columnVisibilityModel}
           />
-        </Box>
+        </Paper>
+
+        {/* </Box> */}
 
         <Snackbar
           open={errorOpen}

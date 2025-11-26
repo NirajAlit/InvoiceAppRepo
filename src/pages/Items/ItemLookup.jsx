@@ -27,7 +27,12 @@ const ItemLookup = ({ value, onChange, ...props }) => {
     return (
         <Select
             value={value}
-            onChange={onChange}
+            onChange={(e) => {
+                const selectedItem = items.find(i => i.itemID === e.target.value);
+                if (onChange) {
+                    onChange(e, selectedItem);
+                }
+            }}
             displayEmpty
             renderValue={(selected) => {
                 if (!selected) {
