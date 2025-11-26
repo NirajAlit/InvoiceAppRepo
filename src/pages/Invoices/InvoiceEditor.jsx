@@ -178,7 +178,6 @@ const InvoiceEditor = ({ open, close, mode, invoiceId, onSaved }) => {
         const newItems = [...items];
         newItems[index].itemID = newItemID;
         setItems(newItems);
-        debugger
         // Clear itemID error when user selects an item
         if (lineErrors[index]) {
             const newLineErrors = [...lineErrors];

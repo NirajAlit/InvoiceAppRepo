@@ -200,7 +200,7 @@ const InvoiceList = () => {
     }
 
     const DeleteData = async () => {
-        debugger
+
         if (openDialog) {
             try {
                 await api.delete(`/Invoice/${invoiceID}`);

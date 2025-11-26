@@ -62,7 +62,7 @@ export default function Login() {
         if (!email && !password) {
             return;
         }
-                try {
+        try {
             const res = await publicApi.post("/Auth/Login", {
                 email,
                 password,
@@ -83,15 +83,13 @@ export default function Login() {
 
         } catch (err) {
             console.log("API Error:", err);
-
-           debugger
             const msg = err.response.data;
             if (msg) {
                 //setApiError("Invalid Email or Password")
                 setApiError(msg)
-                
+
             }
-            
+
             setErrorOpen(true);
         }
     };
