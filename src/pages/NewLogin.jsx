@@ -54,24 +54,21 @@ const NewLogin = () => {
     const LoginSchemma = Yup.object().shape({
         email: Yup.string().email().required(),
         password: Yup.string()
-  .required("Password is required")
-  .min(8, "Minimum 8 characters required")
-  .matches(/[A-Z]/, "At least one uppercase letter required")
-  .matches(/[a-z]/, "At least one lowercase letter required")
-  .matches(/[0-9]/, "At least one number required")
-  .matches(/[@$!%*?#&]/, "At least one special character required"),
-
-
+            .required("Password is required")
+            .min(8, "Minimum 8 characters required")
+            .matches(/[A-Z]/, "At least one uppercase letter required")
+            .matches(/[a-z]/, "At least one lowercase letter required")
+            .matches(/[0-9]/, "At least one number required")
+            .matches(/[@$!%*?#&]/, "At least one special character required"),
     })
 
     const formik = useFormik({
         initialValues: {
             email: "",
             password: ""
-        },        
+        },
         validationSchema: LoginSchemma,
         onSubmit: async (values) => {
-            debugger
             try {
                 const res = await publicApi.post("/Auth/Login", {
                     email: values.email,
@@ -97,7 +94,7 @@ const NewLogin = () => {
     });
 
     return (
-        <Grid container component="main" sx={{ height: '90vh', overflow: 'hidden', p: 2, display: "flex", justifyContent: "center" }}>
+        <Grid container component="main" sx={{ minHeight: '100vh' ,p:2,display:"flex" ,justifyContent:"center" }}>
             {/* Left Panel: Visual & Branding */}
             <Grid
                 item
@@ -105,6 +102,7 @@ const NewLogin = () => {
                 sm={4}
                 md={7}
                 sx={{
+                    display: { xs: 'none', sm: 'flex' }, // Hide on mobile
                     position: 'relative',
                     backgroundImage: 'url(https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=2564&auto=format&fit=crop)',
                     backgroundRepeat: 'no-repeat',
@@ -112,7 +110,6 @@ const NewLogin = () => {
                         t.palette.mode === 'light' ? t.palette.grey[50] : t.palette.grey[900],
                     backgroundSize: 'cover',
                     backgroundPosition: 'center',
-                    display: 'flex',
                     flexDirection: 'column',
                     justifyContent: 'center',
                     alignItems: 'center',
@@ -145,12 +142,13 @@ const NewLogin = () => {
                         sx={{
                             mb: 2,
                             textShadow: '0 4px 12px rgba(0,0,0,0.3)',
-                            letterSpacing: '-0.02em'
+                            letterSpacing: '-0.02em',
+                            fontSize: { md: '3.75rem', sm: '2.5rem' } // Responsive font size
                         }}
                     >
                         Welcome to InvoiceApp
                     </Typography>
-                    <Typography variant="h6" sx={{ opacity: 0.9, fontWeight: 300, mb: 4 }}>
+                    <Typography variant="h6" sx={{ opacity: 0.9, fontWeight: 300, mb: 4, fontSize: { sm: '1rem', md: '1.25rem' } }}>
                         Manage your business finances with clarity and precision.
                         Streamlined invoicing for modern professionals.
                     </Typography>
@@ -189,13 +187,14 @@ const NewLogin = () => {
                     flexDirection: 'column',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    background: '#ffffff'
+                    background: '#ffffff',
+                    minHeight: '100vh' // Ensure it takes full height on mobile
                 }}
             >
                 <Box
                     sx={{
                         my: 8,
-                        mx: 4,
+                        mx: { xs: 2, sm: 4 }, // Responsive margin
                         display: 'flex',
                         flexDirection: 'column',
                         alignItems: 'center',
@@ -204,7 +203,7 @@ const NewLogin = () => {
                     }}
                 >
                     <Box sx={{ mb: 4, textAlign: 'center' }}>
-                        <Typography component="h1" variant="h4" fontWeight="bold" color="text.primary" gutterBottom>
+                        <Typography component="h1" variant="h4" fontWeight="bold" color="text.primary" gutterBottom sx={{ fontSize: { xs: '1.75rem', sm: '2.125rem' } }}>
                             Sign In
                         </Typography>
                         <Typography variant="body1" color="text.secondary">
@@ -212,7 +211,7 @@ const NewLogin = () => {
                         </Typography>
                     </Box>
 
-                    <Box component="form" noValidate onSubmit={formik.handleSubmit} sx={{ mt: 1, width: '100%' }}>
+                    <Box component="form" noValidate onSubmit={formik.handleSubmit} sx={{ mt: 1, width: '100%', p:2 }}>
                         <TextField
                             margin="normal"
                             required
