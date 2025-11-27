@@ -6,6 +6,7 @@ import Login from "./pages/Login";
 import ItemList from "./pages/Items/ItemList";
 import SignupForm from "./pages/SignupForm";
 import InvocieList from "./pages/Invoices/InvocieList";
+import NewLogin from "./pages/NewLogin";
 
 export default function App() {
 
@@ -25,7 +26,11 @@ export default function App() {
   else {
     return (
       <Routes>
-        <Route path="/login" element={<Login />} />
+         {/* <Route path="/login" element={<Login />} />  */}
+        
+        
+          <Route path="/login" element={<NewLogin/>} /> 
+
         <Route path="/signup" element={<SignupForm />} />
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>

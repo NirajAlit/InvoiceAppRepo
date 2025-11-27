@@ -244,32 +244,7 @@ export default function Login() {
                             helperText={emailError}
                             sx={{ mb: 3 }}
                         />
-                        {/* <TextField
-                            required
-                            type={showPassword ? 'text' : 'password'}
-                            label="Password"
-                            variant="outlined"
-                            fullWidth
-                            size="small"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            sx={{ mb: 1 }}
-                            slotProps={{
-                                input: {
-                                    endAdornment: (
-                                        <InputAdornment position="end">
-                                            <IconButton
-                                                onClick={() => setShowPassword(!showPassword)}
-                                                edge="end"
-                                                aria-label="toggle password visibility"
-                                            >
-                                                {showPassword ? <VisibilityOff /> : <Visibility />}
-                                            </IconButton>
-                                        </InputAdornment>
-                                    )
-                                }
-                            }}
-                        /> */}
+
                         <TextField
                             required
                             type={showPassword ? 'text' : 'password'}
@@ -282,7 +257,11 @@ export default function Login() {
                             error={passwordError !== ""}
                             helperText={passwordError}
                             sx={{ mb: 1 }}
+
                             slotProps={{
+                                htmlInput: {
+                                    maxLength: 20,
+                                },
                                 input: {
                                     endAdornment: (
                                         <InputAdornment position="end">
@@ -295,14 +274,13 @@ export default function Login() {
                                             </IconButton>
                                         </InputAdornment>
                                     )
+
                                 }
                             }}
                         />
 
                         <Box sx={{ display: 'flex', justifyContent: 'end', alignItems: 'end', mb: 2 }}>
-
                             <Box sx={{ display: 'flex', alignItems: 'end' }}>
-
                                 <Link href="#" underline="hover" variant="body2" color="primary">
                                     Forgot password?
                                 </Link>
