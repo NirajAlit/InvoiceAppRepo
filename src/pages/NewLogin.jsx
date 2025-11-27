@@ -21,6 +21,7 @@ import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import EmailOutlinedIcon from '@mui/icons-material/EmailOutlined';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import { useFormik } from "formik";
+import * as Yup from 'yup'
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -49,30 +50,34 @@ const NewLogin = () => {
     const handleClickShowPassword = () => setShowPassword((show) => !show);
     const handleMouseDownPassword = (event) => event.preventDefault();
 
+
+    const LoginSchemma = Yup.object().shape({
+        email: Yup.string().email().required(),
+        password: Yup.string()
+  .required("Password is required")
+  .min(8, "Minimum 8 characters required")
+  .matches(/[A-Z]/, "At least one uppercase letter required")
+  .matches(/[a-z]/, "At least one lowercase letter required")
+  .matches(/[0-9]/, "At least one number required")
+  .matches(/[@$!%*?#&]/, "At least one special character required"),
+
+
+    })
+
     const formik = useFormik({
         initialValues: {
             email: "",
             password: ""
-        },
-        validate: (values) => {
-            const errors = {};
-            if (!values.email) errors.email = "Email is required";
-            else if (!emailRegex.test(values.email)) {
-                errors.email = "Invalid email format";
-            }
-            if (!values.password) {
-                errors.password = "Password is required";
-            }
-            return errors;
-        },
+        },        
+        validationSchema: LoginSchemma,
         onSubmit: async (values) => {
+            debugger
             try {
                 const res = await publicApi.post("/Auth/Login", {
                     email: values.email,
                     password: values.password,
                     rememberMe: false,
                 });
-
                 localStorage.setItem("token", res.data.token);
                 localStorage.setItem("user", JSON.stringify(res.data.user));
                 localStorage.setItem("company", JSON.stringify(res.data.company));
@@ -92,7 +97,7 @@ const NewLogin = () => {
     });
 
     return (
-        <Grid container component="main" sx={{ height: '100vh', overflow: 'hidden', p: 2, display: "flex", justifyContent: "center" }}>
+        <Grid container component="main" sx={{ height: '90vh', overflow: 'hidden', p: 2, display: "flex", justifyContent: "center" }}>
             {/* Left Panel: Visual & Branding */}
             <Grid
                 item

@@ -1,5 +1,6 @@
+
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import {
   List,
   ListItem,
@@ -8,101 +9,85 @@ import {
   IconButton,
   Box,
   Typography,
-  Button,
-  Container,
   CssBaseline,
   Toolbar,
   Divider,
   ListItemIcon,
-  Menu
+  Menu,
+  MenuItem,
+  Avatar,
+  useMediaQuery,
+  Tooltip
 } from "@mui/material";
-
-import MenuIcon from "@mui/icons-material/Menu";
-import { styled, useTheme } from "@mui/material/styles";
+import { styled, useTheme, alpha } from "@mui/material/styles";
 import MuiAppBar from "@mui/material/AppBar";
 import MuiDrawer from "@mui/material/Drawer";
+import MenuIcon from "@mui/icons-material/Menu";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
-import ChevronRightIcon from "@mui/icons-material/ChevronRight";
-import { Avatar, MenuItem } from "@mui/material";
-
+import LogoutIcon from '@mui/icons-material/LogoutOutlined';
 import {
   DashboardCustomize,
-  ContactPage,
-  InvertColorsTwoTone,
   ReceiptLong,
   Inventory,
+  Settings,
+  Person
 } from "@mui/icons-material";
 import { GetCompanyLogoThumbnailUrl } from "../api/companylogo.service";
-import LogoutIcon from '@mui/icons-material/LogoutOutlined'
 
-const drawerWidth = 300;
+const drawerWidth = 280;
 
-/* ------------ Drawer Open / Close Style ------------ */
-const openedMixin = (theme) => ({
-  width: drawerWidth,
-  transition: theme.transitions.create("width", {
+/* ------------ STYLED COMPONENTS ------------ */
+
+const Main = styled("main", { shouldForwardProp: (prop) => prop !== "open" })(
+  ({ theme, open }) => ({
+    flexGrow: 1,
+    padding: theme.spacing(3),
+    transition: theme.transitions.create("margin", {
+      easing: theme.transitions.easing.sharp,
+      duration: theme.transitions.duration.leavingScreen,
+    }),
+    marginLeft: 0, // For temporary drawer or closed permanent
+    backgroundColor: "#f4f6f8",
+    minHeight: "100vh",
+    ...(open && {
+      transition: theme.transitions.create("margin", {
+        easing: theme.transitions.easing.easeOut,
+        duration: theme.transitions.duration.enteringScreen,
+      }),
+      marginLeft: 0, // We'll handle layout with flexbox instead of margin for better responsiveness
+    }),
+  })
+);
+
+const AppBar = styled(MuiAppBar, {
+  shouldForwardProp: (prop) => prop !== "open",
+})(({ theme, open }) => ({
+  zIndex: theme.zIndex.drawer + 1,
+  backdropFilter: "blur(6px)",
+  backgroundColor: alpha(theme.palette.background.paper, 0.9),
+  color: theme.palette.text.primary,
+  boxShadow: "0px 1px 10px rgba(0, 0, 0, 0.05)",
+  transition: theme.transitions.create(["width", "margin"], {
     easing: theme.transitions.easing.sharp,
-    duration: theme.transitions.duration.enteringScreen
+    duration: theme.transitions.duration.leavingScreen,
   }),
-  overflowX: "hidden"
-});
-
-const closedMixin = (theme) => ({
-  transition: theme.transitions.create("width", {
-    easing: theme.transitions.easing.sharp,
-    duration: theme.transitions.duration.leavingScreen
+  ...(open && {
+    marginLeft: drawerWidth,
+    width: `calc(100 % - ${ drawerWidth }px)`,
+    transition: theme.transitions.create(["width", "margin"], {
+      easing: theme.transitions.easing.sharp,
+      duration: theme.transitions.duration.enteringScreen,
+    }),
   }),
-  overflowX: "hidden",
-  width: `calc(${theme.spacing(7)} + 1px)`,
-  [theme.breakpoints.up("sm")]: {
-    width: `calc(${theme.spacing(8)} + 1px)`
-  }
-});
+}));
 
 const DrawerHeader = styled("div")(({ theme }) => ({
   display: "flex",
   alignItems: "center",
-  justifyContent: "flex-end",
-  padding: theme.spacing(0, 1),
-  ...theme.mixins.toolbar
-}));
-
-/* ------------ FIXED & CLEAN APPBAR ------------ */
-const AppBar = styled(MuiAppBar, {
-  shouldForwardProp: (prop) => prop !== "open"
-})(({ theme, open }) => ({
-  zIndex: theme.zIndex.drawer + 1,
-  transition: theme.transitions.create(["width", "margin"], {
-    easing: theme.transitions.easing.sharp,
-    duration: theme.transitions.duration.leavingScreen
-  }),
-
-  ...(open && {
-    marginLeft: drawerWidth,
-    width: `calc(100% - ${drawerWidth}px)`,
-    transition: theme.transitions.create(["width", "margin"], {
-      easing: theme.transitions.easing.sharp,
-      duration: theme.transitions.duration.enteringScreen
-    })
-  })
-}));
-
-/* ------------ Drawer Component ------------ */
-const Drawer = styled(MuiDrawer, {
-  shouldForwardProp: (prop) => prop !== "open"
-})(({ theme, open }) => ({
-  width: drawerWidth,
-  flexShrink: 0,
-  whiteSpace: "nowrap",
-  boxSizing: "border-box",
-  ...(open && {
-    ...openedMixin(theme),
-    "& .MuiDrawer-paper": openedMixin(theme)
-  }),
-  ...(!open && {
-    ...closedMixin(theme),
-    "& .MuiDrawer-paper": closedMixin(theme)
-  })
+  padding: theme.spacing(0, 2),
+  // necessary for content to be below app bar
+  ...theme.mixins.toolbar,
+  justifyContent: "space-between",
 }));
 
 /* ======================================================= */
@@ -111,220 +96,290 @@ const Drawer = styled(MuiDrawer, {
 
 export default function Layout({ children }) {
   const navigate = useNavigate();
+  const location = useLocation();
   const theme = useTheme();
-  const [open, setOpen] = useState(true);
+  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
+  
+  const [open, setOpen] = useState(!isMobile);
+  const [anchorEl, setAnchorEl] = useState(null);
+  const [logoUrl, setLogoUrl] = useState("");
+
+  // Auto-close drawer on mobile when navigating
+  useEffect(() => {
+    if (isMobile) {
+      setOpen(false);
+    } else {
+      setOpen(true);
+    }
+  }, [isMobile]);
+
+  const handleDrawerToggle = () => {
+    setOpen(!open);
+  };
 
   const handleLogout = () => {
-
     window.location.href = "/login";
     navigate("/login");
     localStorage.removeItem("token");
   };
 
-  const [anchorEl, setAnchorEl] = useState(null);
-  const [logoUrl, setLogoUrl] = useState("");
-
   useEffect(() => {
     const company = JSON.parse(localStorage.getItem("company"));
-    if (company.companyID) {
-
+    if (company?.companyID) {
       GetCompanyLogoThumbnailUrl(company.companyID).then((res) => {
-        setLogoUrl(res.data); // YOUR API RESPONSE FIELD
+        setLogoUrl(res.data);
       });
     }
   }, []);
 
-
   const handleAvatarClick = (e) => setAnchorEl(e.currentTarget);
   const handleMenuClose = () => setAnchorEl(null);
-  const userEmail = localStorage.getItem("email");
 
   const getEmailLetters = () => {
     const company = JSON.parse(localStorage.getItem("company"));
-    if (!company) return "";
-
+    if (!company) return "U";
     const namePart = company.companyName?.trim() || "";
     return namePart.slice(0, 2).toUpperCase();
   };
 
+  const menuItems = [
+    { text: "Dashboard", icon: <DashboardCustomize />, path: "/Home" },
+    { text: "Items", icon: <Inventory />, path: "/Items" },
+    { text: "Invoices", icon: <ReceiptLong />, path: "/Invoices" },
+  ];
 
-  return (
+  const drawerContent = (
     <>
-      <Box sx={{ display: "flex", height: "100vh" }}>
-        <CssBaseline />
-
-            {/* ---------------------- APPBAR ---------------------- */}
-        <AppBar position="fixed" open={open}>
-          <Toolbar sx={{ position: "relative" }}>
-
-            {/* LEFT MENU BUTTON */}
-            <IconButton
-              color="inherit"
-              aria-label="open drawer"
-              edge="start"
-              onClick={() => setOpen(true)}
-              sx={{ ...(open && { display: "none" }) }}
-            >
-              <MenuIcon />
-            </IconButton>
-
-            {/* CENTER TITLE */}
-            <Typography
-              variant="h6"
-              noWrap
-              sx={{
-                position: "absolute",
-                left: "50%",
-                transform: "translateX(-50%)",
-                fontWeight: 600
-              }}
-            >
-              Invoice App
-            </Typography>
-
-
-            <Box sx={{ marginLeft: "auto" }}>
-              <IconButton
-                onClick={handleAvatarClick}
-                sx={{
-                  p: 0,
-                  borderRadius: "50%",
-                  overflow: "hidden",
-                  boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
-                  transition: "0.3s",
-                  "&:hover": {
-                    transform: "scale(1.05)",
-                    boxShadow: "0 6px 15px rgba(0,0,0,0.25)",
-                  },
+      <DrawerHeader sx={{ backgroundColor: "#115293", color: "white" }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Box 
+                sx={{ 
+                    width: 32, 
+                    height: 32, 
+                    bgcolor: 'white', 
+                    borderRadius: 1, 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center',
+                    color: '#115293',
+                    fontWeight: 'bold'
                 }}
-              >
-                <Avatar
-                  src={logoUrl || ""}
-                  alt="User"
-                  sx={{
-                    width: 40,
-                    height: 40,
-                    background: "linear-gradient(135deg, #2196F3, #21CBF3)",
-                    fontSize: "14px",
-                    fontWeight: "bold",
-                  }}
-                >
-                  {!logoUrl && getEmailLetters()}
-                </Avatar>
-              </IconButton>
-
-              <Menu
-                anchorEl={anchorEl}
-                open={Boolean(anchorEl)}
-                onClose={handleMenuClose}
-                PaperProps={{
-                  elevation: 4,
-                  sx: {
-                    padding: 1,
-                    //mt: 1.5,
-                    minWidth: 160,
-                    borderRadius: "12px",
-                    overflow: "hidden",
-                    backgroundColor: "#ffffffff",
-                    boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
-                  },
-                }}
-              >
-
-                <MenuItem
-                  onClick={handleLogout}
-                  sx={{
-                    borderRadius: "12px",
-                    py: 1.5,
-                    fontSize: "14px",
-                    display: "flex",
-                    gap: 1,
-                    color: "#d32f2f",
-                    fontWeight: 500,
-                    "&:hover": {
-                      backgroundColor: "#ffbebeff",
-                    },
-                  }}
-                >
-                  <LogoutIcon fontSize="small" />
-                  Logout
-                </MenuItem>
-
-              </Menu>
+            >
+                IA
             </Box>
-
-
-          </Toolbar>
-
-        </AppBar>
-        
-
-        {/* ---------------------- DRAWER ---------------------- */}
-        <Drawer variant="permanent" open={open}>
-         
-          <DrawerHeader>
-            <IconButton onClick={() => setOpen(false)}>
-              {theme.direction === "rtl" ? (
-                <ChevronRightIcon />
-              ) : (
-                <ChevronLeftIcon />
-              )}
-            </IconButton>
-          </DrawerHeader>
-
-          <Divider />
-         <List>
-          {[
-            { text: "Home", icon: <DashboardCustomize />, path: "/Home" },
-            { text: "Items", icon: <Inventory />, path: "/Items" },
-            { text: "Invoices", icon: <ReceiptLong />, path: "/Invoices" },
-          ].map((item) => (
-            <ListItem key={item.text} disablePadding sx={{ display: "block" }}>
+            <Typography variant="h6" fontWeight="bold" noWrap>
+            Invoice App
+            </Typography>
+        </Box>
+        {isMobile && (
+          <IconButton onClick={handleDrawerToggle} sx={{ color: "white" }}>
+            <ChevronLeftIcon />
+          </IconButton>
+        )}
+      </DrawerHeader>
+      <Divider sx={{ borderColor: "rgba(255,255,255,0.1)" }} />
+      
+      <List sx={{ px: 2, py: 2 }}>
+        {menuItems.map((item) => {
+          const isActive = location.pathname.startsWith(item.path);
+          return (
+            <ListItem key={item.text} disablePadding sx={{ mb: 1 }}>
               <ListItemButton
-                onClick={() => navigate(item.path)}
+                onClick={() => {
+                    navigate(item.path);
+                    if (isMobile) setOpen(false);
+                }}
                 sx={{
-                  ...(location.pathname === item.path && {
-                    backgroundColor: theme.palette.primary.main,
-                    color: theme.palette.primary.contrastText,
-                    "&:hover": { backgroundColor: theme.palette.primary.dark },
-                  }),
+                  borderRadius: 2,
                   minHeight: 48,
-                  justifyContent: open ? "initial" : "center",
-                  px: 2,
+                  backgroundColor: isActive ? "rgba(255, 255, 255, 0.15)" : "transparent",
+                  color: isActive ? "#ffffff" : "rgba(255, 255, 255, 0.7)",
+                  "&:hover": {
+                    backgroundColor: "rgba(255, 255, 255, 0.08)",
+                    color: "#ffffff",
+                  },
                 }}
               >
                 <ListItemIcon
                   sx={{
-                    minWidth: 0,
-                    justifyContent: "center",
-                    mr: open ? 3 : "auto",
-                    color: "inherit",
+                    minWidth: 40,
+                    color: isActive ? "#4fc3f7" : "inherit",
                   }}
                 >
                   {item.icon}
                 </ListItemIcon>
-
-                <ListItemText primary={item.text} sx={{ opacity: open ? 1 : 0 }} />
+                <ListItemText 
+                    primary={item.text} 
+                    primaryTypographyProps={{ 
+                        fontWeight: isActive ? 600 : 400,
+                        fontSize: '0.95rem'
+                    }} 
+                />
+                {isActive && (
+                    <Box 
+                        sx={{ 
+                            width: 4, 
+                            height: 4, 
+                            borderRadius: '50%', 
+                            bgcolor: '#4fc3f7',
+                            ml: 1
+                        }} 
+                    />
+                )}
               </ListItemButton>
             </ListItem>
-          ))}
-        </List>
-        </Drawer>
-
-        {/* ---------------------- MAIN CONTENT ---------------------- */}
-        <Box
-          component="main"
-          sx={{
-            flexGrow: 1,
-            p: 2,
-            backgroundColor: "#e9eef6",
-            overflow: "auto"   // <-- Important (children adjust)
-          }}
+          );
+        })}
+      </List>
+      
+      <Box sx={{ flexGrow: 1 }} />
+      
+      <Box sx={{ p: 2 }}>
+        <Box 
+            sx={{ 
+                p: 2, 
+                borderRadius: 2, 
+                bgcolor: 'rgba(255,255,255,0.05)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 2
+            }}
         >
-          <DrawerHeader />
-          {children}
+            <Avatar 
+                src={logoUrl || ""} 
+                sx={{ width: 40, height: 40, bgcolor: '#4fc3f7' }}
+            >
+                {!logoUrl && getEmailLetters()}
+            </Avatar>
+            <Box sx={{ overflow: 'hidden' }}>
+                <Typography variant="subtitle2" color="white" noWrap>
+                    {JSON.parse(localStorage.getItem("company"))?.companyName || "User"}
+                </Typography>
+                <Typography variant="caption" color="rgba(255,255,255,0.5)" noWrap>
+                    Admin
+                </Typography>
+            </Box>
         </Box>
       </Box>
     </>
+  );
+
+  return (
+    <Box sx={{ display: "flex" }}>
+      <CssBaseline />
+      
+      {/* ---------------------- APPBAR ---------------------- */}
+      <AppBar position="fixed" open={open && !isMobile} elevation={0}>
+        <Toolbar>
+          <IconButton
+            color="inherit"
+            aria-label="open drawer"
+            onClick={handleDrawerToggle}
+            edge="start"
+            sx={{ mr: 2, ...(open && !isMobile && { display: "none" }) }}
+          >
+            <MenuIcon />
+          </IconButton>
+          
+          <Typography variant="h6" noWrap component="div" sx={{ color: 'text.primary', fontWeight: 600 }}>
+             {menuItems.find(item => location.pathname.startsWith(item.path))?.text || "Dashboard"}
+          </Typography>
+
+          <Box sx={{ flexGrow: 1 }} />
+
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <IconButton
+                onClick={handleAvatarClick}
+                size="small"
+                sx={{
+                    ml: 2,
+                    transition: 'transform 0.2s',
+                    '&:hover': { transform: 'scale(1.05)' }
+                }}
+            >
+                <Avatar
+                    src={logoUrl || ""}
+                    sx={{
+                        width: 36,
+                        height: 36,
+                        bgcolor: theme.palette.primary.main,
+                        fontSize: "0.9rem",
+                    }}
+                >
+                    {!logoUrl && getEmailLetters()}
+                </Avatar>
+            </IconButton>
+          </Box>
+
+          <Menu
+            anchorEl={anchorEl}
+            open={Boolean(anchorEl)}
+            onClose={handleMenuClose}
+            transformOrigin={{ horizontal: 'right', vertical: 'top' }}
+            anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+            PaperProps={{
+              elevation: 3,
+              sx: {
+                mt: 1.5,
+                minWidth: 180,
+                borderRadius: 3,
+                overflow: "hidden",
+                "& .MuiMenuItem-root": {
+                    px: 2,
+                    py: 1.5,
+                    gap: 1.5
+                }
+              },
+            }}
+          >
+            <MenuItem onClick={() => { handleMenuClose(); navigate('/profile'); }}>
+                <Person fontSize="small" color="action" />
+                Profile
+            </MenuItem>
+            <MenuItem onClick={() => { handleMenuClose(); navigate('/settings'); }}>
+                <Settings fontSize="small" color="action" />
+                Settings
+            </MenuItem>
+            <Divider />
+            <MenuItem onClick={handleLogout} sx={{ color: "error.main" }}>
+              <LogoutIcon fontSize="small" />
+              Logout
+            </MenuItem>
+          </Menu>
+        </Toolbar>
+      </AppBar>
+
+      {/* ---------------------- DRAWER ---------------------- */}
+      <MuiDrawer
+        variant={isMobile ? "temporary" : "permanent"}
+        open={open}
+        onClose={handleDrawerToggle}
+        ModalProps={{
+            keepMounted: true, // Better open performance on mobile.
+        }}
+        sx={{
+          width: drawerWidth,
+          flexShrink: 0,
+          "& .MuiDrawer-paper": {
+            width: drawerWidth,
+            boxSizing: "border-box",
+            backgroundColor: "#0d3c6e", // Dark blue theme
+            color: "white",
+            borderRight: "none",
+            boxShadow: "4px 0 24px rgba(0,0,0,0.1)"
+          },
+        }}
+      >
+        {drawerContent}
+      </MuiDrawer>
+
+      {/* ---------------------- MAIN CONTENT ---------------------- */}
+      <Main open={open && !isMobile}>
+        <DrawerHeader />
+        <Box sx={{ maxWidth: '1600px', mx: 'auto' }}>
+            {children}
+        </Box>
+      </Main>
+    </Box>
   );
 }
